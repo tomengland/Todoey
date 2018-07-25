@@ -12,17 +12,16 @@ class ToDoListViewController: UITableViewController {
     
     var toDoItems = [ToDoItem]()
     
-    let defaults = UserDefaults.standard
     let keyForToDoItems = "ToDoItemsArray"
-    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        if let items = defaults.array(forKey: keyForToDoItems) as? [ToDoItem] {
-            toDoItems = items
-            
-        }
+        
+        loadItems()
+        
+
     }
     
     
@@ -53,12 +52,35 @@ class ToDoListViewController: UITableViewController {
         
         toDoItems[indexPath.row].isDone = !toDoItems[indexPath.row].isDone
         
+        self.saveData()
         tableView.reloadData()
         tableView.deselectRow(at: indexPath, animated: true)
         
     }
     
     // MARK - Add New Item Methods
+    
+    func saveData() {
+        let encoder = PropertyListEncoder()
+            do {
+                let data = try encoder.encode(self.toDoItems)
+                try data.write(to: self.dataFilePath!)
+            } catch {
+            
+            }
+        }
+    
+    func loadItems() {
+        
+       if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                toDoItems = try decoder.decode([ToDoItem].self, from: data)
+            } catch {
+                print(error)
+            }
+        }
+    }
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
@@ -76,7 +98,7 @@ class ToDoListViewController: UITableViewController {
             
             self.tableView.reloadData()
             
-            self.defaults.set(self.toDoItems, forKey: self.keyForToDoItems)
+            self.saveData()
         }
         alert.addTextField {
             (alertTextField) in
